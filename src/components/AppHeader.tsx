@@ -1,29 +1,68 @@
-import { Bell, Settings } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { User, LogOut, Shield } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Button } from '@/components/ui/button';
 
 export function AppHeader() {
+  const { user, profile, signOut } = useAuth();
+  const navigate = useNavigate();
+
   return (
-    <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-xl border-b border-border/50 safe-area-inset">
-      <div className="flex items-center justify-between h-14 px-4 max-w-lg mx-auto">
-        {/* Logo */}
+    <header className="sticky top-0 z-50 px-4 py-3 backdrop-blur-xl bg-background/80 border-b border-border/50 safe-area-inset">
+      <div className="max-w-lg mx-auto flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
             <span className="font-mono font-bold text-sm text-primary-foreground">R</span>
           </div>
           <span className="font-bold text-lg">
-            React<span className="text-primary">Learn</span>
+            React<span className="text-primary">Lab</span>
           </span>
         </div>
 
-        {/* Actions */}
-        <div className="flex items-center gap-2">
-          <button className="p-2 rounded-lg hover:bg-secondary transition-colors relative">
-            <Bell className="w-5 h-5 text-muted-foreground" />
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-primary rounded-full" />
-          </button>
-          <button className="p-2 rounded-lg hover:bg-secondary transition-colors">
-            <Settings className="w-5 h-5 text-muted-foreground" />
-          </button>
-        </div>
+        {user ? (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="flex items-center gap-2 outline-none">
+                <div className="text-right hidden sm:block">
+                  <p className="text-sm font-medium">{profile?.display_name || 'Learner'}</p>
+                  <p className="text-xs text-muted-foreground">
+                    Level {profile?.level || 1} · {profile?.xp || 0} XP
+                  </p>
+                </div>
+                <Avatar className="h-9 w-9 border-2 border-primary/30">
+                  <AvatarImage src={profile?.avatar_url || undefined} />
+                  <AvatarFallback className="bg-primary/10 text-primary text-sm">
+                    {(profile?.display_name || user.email || '?')[0].toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuItem onClick={() => navigate('/profile')}>
+                <User className="w-4 h-4 mr-2" /> Profile
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate('/achievements')}>
+                <Shield className="w-4 h-4 mr-2" /> Achievements
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={signOut} className="text-destructive">
+                <LogOut className="w-4 h-4 mr-2" /> Sign Out
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ) : (
+          <Button variant="default" size="sm" onClick={() => navigate('/auth')}>
+            Sign In
+          </Button>
+        )}
       </div>
     </header>
   );
