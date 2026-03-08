@@ -11,7 +11,7 @@ import { toast } from 'sonner';
 export default function LessonPage() {
   const { slug, lessonId } = useParams<{ slug: string; lessonId: string }>();
   const navigate = useNavigate();
-  const { user, profile } = useAuth();
+  const { user, profile, refreshProfile } = useAuth();
   const queryClient = useQueryClient();
 
   const { data: project } = useQuery({
@@ -85,17 +85,45 @@ export default function LessonPage() {
         }, { onConflict: 'user_id,project_id,lesson_id' });
       if (error) throw error;
 
-      // Award XP
+      // Fetch fresh profile to avoid stale XP
+      const { data: freshProfile } = await supabase
+        .from('profiles')
+        .select('xp, level, last_activity_date, streak_days')
+        .eq('user_id', user.id)
+        .single();
+
+      if (!freshProfile) return;
+
       const xpToAdd = lesson.xp_reward;
-      const currentXp = (profile?.xp || 0) + xpToAdd;
+      const currentXp = freshProfile.xp + xpToAdd;
       const newLevel = Math.floor(currentXp / 100) + 1;
+
+      // Streak calculation
+      const today = new Date().toISOString().split('T')[0];
+      const lastActivity = freshProfile.last_activity_date;
+      let newStreak = freshProfile.streak_days;
+
+      if (lastActivity !== today) {
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        const yesterdayStr = yesterday.toISOString().split('T')[0];
+
+        if (lastActivity === yesterdayStr) {
+          newStreak += 1; // Consecutive day
+        } else if (!lastActivity) {
+          newStreak = 1; // First activity
+        } else {
+          newStreak = 1; // Streak broken, restart
+        }
+      }
 
       await supabase
         .from('profiles')
         .update({
           xp: currentXp,
           level: newLevel,
-          last_activity_date: new Date().toISOString().split('T')[0],
+          streak_days: newStreak,
+          last_activity_date: today,
         })
         .eq('user_id', user.id);
     },
@@ -103,6 +131,9 @@ export default function LessonPage() {
       toast.success(`+${lesson?.xp_reward} XP earned! 🎉`);
       queryClient.invalidateQueries({ queryKey: ['user_progress'] });
       queryClient.invalidateQueries({ queryKey: ['lesson_progress'] });
+      
+      // Refresh profile so header/hero show updated XP
+      refreshProfile();
       
       // Navigate to next lesson or back to project
       if (allLessons && lesson) {

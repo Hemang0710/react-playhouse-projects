@@ -1,7 +1,9 @@
 import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { ProjectCard } from '@/components/ProjectCard';
 import { useProjects, useUserProgress } from '@/hooks/useProjects';
 import { miniProjects } from '@/data/projects';
+import { supabase } from '@/integrations/supabase/client';
 import { Loader2 } from 'lucide-react';
 
 export function ProjectsSection() {
@@ -9,13 +11,34 @@ export function ProjectsSection() {
   const { data: dbProjects, isLoading } = useProjects();
   const { data: userProgress } = useUserProgress();
 
+  // Fetch lesson counts per project for accurate progress calculation
+  const { data: lessonCounts } = useQuery({
+    queryKey: ['lesson_counts'],
+    enabled: !!dbProjects && dbProjects.length > 0,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('lessons')
+        .select('project_id');
+      if (error) throw error;
+      const counts: Record<string, number> = {};
+      data?.forEach((l) => {
+        counts[l.project_id] = (counts[l.project_id] || 0) + 1;
+      });
+      return counts;
+    },
+  });
+
   // Use DB projects if available, otherwise fallback to static data
   const projects = dbProjects && dbProjects.length > 0
-    ? dbProjects.map((p, i) => {
-        const progress = userProgress?.filter(up => up.project_id === p.id) || [];
-        const completedCount = progress.filter(up => up.status === 'completed').length;
-        const totalProgress = progress.length > 0 ? Math.round((completedCount / Math.max(progress.length, 1)) * 100) : 0;
-        
+    ? dbProjects.map((p) => {
+        const completedLessons = userProgress?.filter(
+          (up) => up.project_id === p.id && up.status === 'completed' && up.lesson_id
+        ).length || 0;
+        const totalLessons = lessonCounts?.[p.id] || 1;
+        const totalProgress = totalLessons > 0
+          ? Math.round((completedLessons / totalLessons) * 100)
+          : 0;
+
         return {
           id: p.slug,
           title: p.title,
@@ -25,7 +48,7 @@ export function ProjectsSection() {
           concepts: p.concepts,
           icon: p.icon,
           progress: totalProgress,
-          isLocked: false, // Could check prerequisite logic
+          isLocked: false,
         };
       })
     : miniProjects;

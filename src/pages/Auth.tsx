@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Mail, Lock, User, ArrowRight, Loader2 } from 'lucide-react';
@@ -8,7 +8,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
-import { useEffect } from 'react';
 
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
@@ -73,7 +72,6 @@ export default function Auth() {
         animate={{ opacity: 1, y: 0 }}
         className="w-full max-w-md"
       >
-        {/* Logo / Branding */}
         <div className="text-center mb-8">
           <div className="text-4xl mb-3">⚛️</div>
           <h1 className="text-2xl font-bold gradient-text">ReactLab</h1>
@@ -82,9 +80,7 @@ export default function Auth() {
           </p>
         </div>
 
-        {/* Card */}
         <div className="glass-card p-6 space-y-6">
-          {/* Google Sign In */}
           <Button
             variant="outline"
             className="w-full h-12 text-base"
@@ -104,7 +100,6 @@ export default function Auth() {
             Continue with Google
           </Button>
 
-          {/* Divider */}
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-border" />
@@ -114,7 +109,6 @@ export default function Auth() {
             </div>
           </div>
 
-          {/* Email Form */}
           <form onSubmit={handleEmailAuth} className="space-y-4">
             {!isLogin && (
               <div className="relative">
@@ -169,7 +163,6 @@ export default function Auth() {
             </Button>
           </form>
 
-          {/* Toggle */}
           <p className="text-center text-sm text-muted-foreground">
             {isLogin ? "Don't have an account?" : 'Already have an account?'}{' '}
             <button
