@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { User, LogOut, Shield } from 'lucide-react';
+import { User, LogOut, Shield, Settings } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
@@ -12,13 +12,13 @@ import {
 import { Button } from '@/components/ui/button';
 
 export function AppHeader() {
-  const { user, profile, signOut } = useAuth();
+  const { user, profile, isAdmin, signOut } = useAuth();
   const navigate = useNavigate();
 
   return (
     <header className="sticky top-0 z-50 px-4 py-3 backdrop-blur-xl bg-background/80 border-b border-border/50 safe-area-inset">
       <div className="max-w-lg mx-auto flex items-center justify-between">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('/')}>
           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
             <span className="font-mono font-bold text-sm text-primary-foreground">R</span>
           </div>
@@ -34,7 +34,7 @@ export function AppHeader() {
                 <div className="text-right hidden sm:block">
                   <p className="text-sm font-medium">{profile?.display_name || 'Learner'}</p>
                   <p className="text-xs text-muted-foreground">
-                    Level {profile?.level || 1} · {profile?.xp || 0} XP
+                    Lv.{profile?.level || 1} · {profile?.xp || 0} XP
                   </p>
                 </div>
                 <Avatar className="h-9 w-9 border-2 border-primary/30">
@@ -52,6 +52,14 @@ export function AppHeader() {
               <DropdownMenuItem onClick={() => navigate('/achievements')}>
                 <Shield className="w-4 h-4 mr-2" /> Achievements
               </DropdownMenuItem>
+              {isAdmin && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => navigate('/admin')}>
+                    <Settings className="w-4 h-4 mr-2" /> Admin Panel
+                  </DropdownMenuItem>
+                </>
+              )}
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={signOut} className="text-destructive">
                 <LogOut className="w-4 h-4 mr-2" /> Sign Out
